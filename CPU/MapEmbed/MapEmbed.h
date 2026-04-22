@@ -259,7 +259,7 @@ private:
 
         if(matched != 0){
             int matched_lowbit = matched & (-matched);
-            int matched_index = _mm_tzcnt_32((uint32_t)matched_lowbit);
+            int matched_index = __builtin_ctz((uint32_t)matched_lowbit);
             if(matched_index < bucket[d].used){
                 if(value != NULL){
                     memcpy(value, bucket[d].value[matched_index], VAL_LEN*sizeof(char));
