@@ -5,6 +5,7 @@
 #include "immintrin.h"
 #include "murmur3.h"
 #include <cstring>
+#include <ctime>
 #include <random>
 #include <set>
 #include <cstdio>
@@ -15,9 +16,9 @@
 
 
 // begin kv pair
-#define KEY_LEN 4
-#define VAL_LEN 4
-#define KV_NUM 30000000
+// #define KEY_LEN 4
+// #define VAL_LEN 4
+#define KV_NUM 0
 
 struct KV_entry{
     char key[KEY_LEN];
@@ -54,7 +55,7 @@ int cnt = 0; // debug use
 
 #define MAX_LAYER 12
 #define M 32                // max number of hash functions in each layer
-#define N 16                 // item number in a bucket
+// #define N 16                 // item number in a bucket
 
 struct Bucket{
     char key[N][KEY_LEN];
