@@ -249,17 +249,20 @@ private:
             check_bucket(d);
         
 #ifdef USING_SIMD
-        const __m256i item = _mm256_set1_epi32(*(int*)key);
-        __m256i *keys_p = (__m256i *)(bucket[d].key);
-        int matched = 0;
+        // keys are stored as char[N][KEY_LEN] = char[8][8] = 64 bytes = 2 x __m256i.
+        // Broadcast the 8-byte query key to all 4 lanes of a 256-bit register and
+        // compare as 64-bit integers against both halves of the stored key array.
+        // Use unaligned loads since Bucket is heap-allocated without 32-byte alignment.
+        const __m256i item = _mm256_set1_epi64x(*(int64_t*)key);
+        const __m256i *keys_p = (const __m256i *)(bucket[d].key);
 
-        __m256i a_comp = _mm256_cmpeq_epi32(item, keys_p[0]);
-        matched = _mm256_movemask_ps((__m256)a_comp);
-        
+        __m256i cmp0 = _mm256_cmpeq_epi64(item, _mm256_load_si256(keys_p));     // slots 0-3
+        __m256i cmp1 = _mm256_cmpeq_epi64(item, _mm256_load_si256(keys_p + 1)); // slots 4-7
+        int matched = _mm256_movemask_pd((__m256d)cmp0)
+                    | (_mm256_movemask_pd((__m256d)cmp1) << 4);
 
         if(matched != 0){
-            int matched_lowbit = matched & (-matched);
-            int matched_index = __builtin_ctz((uint32_t)matched_lowbit);
+            int matched_index = __builtin_ctz((uint32_t)matched);
             if(matched_index < bucket[d].used){
                 if(value != NULL){
                     memcpy(value, bucket[d].value[matched_index], VAL_LEN*sizeof(char));
